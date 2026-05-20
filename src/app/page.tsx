@@ -43,8 +43,8 @@ export default function Dashboard() {
   };
 
   const handleUpload = async (file: File) => {
-    if (!file.name.endsWith(".mp4")) {
-      alert("Only .mp4 files are supported.");
+    if (!file.name.endsWith(".mp4") && !file.name.endsWith(".npz")) {
+      alert("Only .mp4 or .npz files are supported.");
       return;
     }
     
@@ -90,7 +90,7 @@ export default function Dashboard() {
       >
         <input
           type="file"
-          accept=".mp4"
+          accept=".mp4,.npz"
           className="hidden"
           ref={fileInputRef}
           onChange={(e) => {
@@ -109,10 +109,10 @@ export default function Dashboard() {
           </div>
           <div>
             <h3 className="text-xl font-semibold">
-              {isUploading ? "Uploading & Queuing..." : "Drag & Drop Video"}
+              {isUploading ? "Uploading & Queuing..." : "Drag & Drop Video or .npz"}
             </h3>
             <p className="text-sm text-gray-400 mt-2">
-              Supports .mp4 files. Analysis takes ~1-2 minutes on the RunPod GPU.
+              Supports .mp4 videos or pre-computed .npz files.
             </p>
           </div>
         </div>

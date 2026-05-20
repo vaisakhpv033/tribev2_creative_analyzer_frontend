@@ -63,9 +63,9 @@ export default function ReportPage() {
   const timeseriesLength = data.timeseries?.visual?.length || 0;
   const lineData = Array.from({ length: timeseriesLength }).map((_, i) => ({
     time: `${i}s`,
-    Visual: data.timeseries.visual[i] * 100,
-    Emotional: data.timeseries.emotional[i] * 100,
-    Attention: data.timeseries.attention?.[i] ? data.timeseries.attention[i] * 100 : data.global_mean?.[i] * 100
+    Visual: (data.timeseries?.visual?.[i] || 0) * 100,
+    Emotional: (data.timeseries?.emotional?.[i] || 0) * 100,
+    Attention: (data.timeseries?.attention?.[i] ?? data.global_mean?.[i] ?? 0) * 100
   }));
 
   return (
