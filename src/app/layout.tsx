@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TRIBEv2 Neural Engagement Analyzer",
+  title: "TripleTap Video Analyzer",
   description: "AI-Powered Ad Video Neural Engagement Scoring",
 };
 
@@ -19,7 +19,7 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased`}>
         <nav className="glass-panel sticky top-0 z-50 mx-4 mt-4 px-6 py-4 flex items-center justify-between">
           <div className="text-xl font-bold tracking-tight">
-            <span className="gradient-text">TRIBEv2</span> Analyzer
+            <span className="gradient-text">TripleTap</span> Video Analyzer
           </div>
           <div className="text-sm text-gray-400">Neural Engagement Scorer</div>
         </nav>
