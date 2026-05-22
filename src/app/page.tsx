@@ -7,6 +7,7 @@ import axios from "axios";
 import Link from "next/link";
 
 export default function Dashboard() {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [videos, setVideos] = useState([]);
@@ -20,7 +21,7 @@ export default function Dashboard() {
 
   const fetchVideos = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/v1/videos");
+      const res = await axios.get(`${API_URL}/api/v1/videos`);
       setVideos(res.data);
     } catch (e) {
       console.error(e);
@@ -53,7 +54,7 @@ export default function Dashboard() {
     formData.append("file", file);
 
     try {
-      await axios.post("http://localhost:8000/api/v1/videos/upload", formData, {
+      await axios.post(`${API_URL}/api/v1/videos/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
       fetchVideos();

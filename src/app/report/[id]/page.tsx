@@ -10,7 +10,7 @@ import {
 import {
   ArrowLeft, Loader2, BrainCircuit, TrendingUp, Timer,
   Heart, Eye, Zap, Target, Flame, Info,
-  ChevronUp, ChevronDown
+  ChevronUp, ChevronDown, Sparkles, ThumbsUp, AlertTriangle, Lightbulb, BarChart3
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -171,23 +171,55 @@ function ConfidenceRangeBar({
 
 export default function ReportPage() {
   const { id } = useParams();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [insights, setInsights] = useState<any>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [insightsError, setInsightsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
       fetchReport();
+      fetchInsights();
     }
   }, [id]);
 
   const fetchReport = async () => {
     try {
-      const res = await axios.get(`http://localhost:8000/api/v1/videos/${id}/report`);
+      const res = await axios.get(`${API_URL}/api/v1/videos/${id}/report`);
       setData(res.data);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInsights = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/v1/videos/${id}/insights`);
+      setInsights(res.data);
+    } catch (e: any) {
+      // 404 is expected — means insights not generated yet
+      if (e?.response?.status !== 404) {
+        console.error(e);
+      }
+    }
+  };
+
+  const generateInsights = async () => {
+    setInsightsLoading(true);
+    setInsightsError(null);
+    try {
+      const res = await axios.post(`${API_URL}/api/v1/videos/${id}/insights`);
+      setInsights(res.data);
+    } catch (e: any) {
+      const detail = e?.response?.data?.detail || "Failed to generate insights. Please try again.";
+      setInsightsError(detail);
+      console.error(e);
+    } finally {
+      setInsightsLoading(false);
     }
   };
 
@@ -364,11 +396,203 @@ export default function ReportPage() {
         </div>
       </motion.div>
 
-      {/* ── SECTION 3: Radar Chart (Dimension Breakdown) ───────────────── */}
+      {/* ── SECTION 3: AI Creative Insights ────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-6 h-6 text-amber-400" />
+            <h2 className="text-xl font-bold">AI Creative Insights</h2>
+            <span className="text-xs text-gray-500 bg-white/5 px-2 py-1 rounded-full">
+              Powered by Gemini
+            </span>
+          </div>
+          {!insightsLoading && (
+            <button
+              onClick={generateInsights}
+              className="px-4 py-2 text-sm font-medium rounded-lg
+                       bg-gradient-to-r from-amber-500/20 to-orange-500/20
+                       border border-amber-500/30 text-amber-300
+                       hover:from-amber-500/30 hover:to-orange-500/30
+                       hover:border-amber-500/50 transition-all
+                       flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              {insights ? "Regenerate" : "Generate Insights"}
+            </button>
+          )}
+        </div>
+
+        {/* Loading State */}
+        {insightsLoading && (
+          <div className="glass-panel p-12 flex flex-col items-center justify-center gap-4">
+            <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
+            <p className="text-gray-400">Analyzing creative with Gemini AI...</p>
+            <p className="text-xs text-gray-500">This may take 10-20 seconds</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {insightsError && !insightsLoading && (
+          <div className="glass-panel p-6 border border-red-500/30">
+            <p className="text-red-400 text-sm">{insightsError}</p>
+          </div>
+        )}
+
+        {/* No Insights Yet */}
+        {!insights && !insightsLoading && !insightsError && (
+          <div className="glass-panel p-8 text-center">
+            <Sparkles className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+            <p className="text-gray-400">Click &quot;Generate Insights&quot; to get AI-powered creative analysis</p>
+            <p className="text-xs text-gray-500 mt-1">Uses the brain feature data to provide actionable recommendations</p>
+          </div>
+        )}
+
+        {/* Insights Content */}
+        {insights && !insightsLoading && (
+          <div className="space-y-6">
+
+            {/* Executive Summary */}
+            <div className="glass-panel p-6">
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <BrainCircuit className="w-5 h-5 text-indigo-400" />
+                Executive Summary
+              </h3>
+              <p className="text-gray-300 leading-relaxed">{insights.summary}</p>
+            </div>
+
+            {/* Strengths + Weaknesses Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              {/* Strengths */}
+              <div className="glass-panel p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <ThumbsUp className="w-5 h-5 text-emerald-400" />
+                  Strengths
+                </h3>
+                <div className="space-y-4">
+                  {insights.strengths?.map((s: any, i: number) => (
+                    <div key={i} className="border-l-2 border-emerald-500/50 pl-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="font-medium text-sm text-emerald-300">{s.title}</h4>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${
+                          s.impact === "high" ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/30" :
+                          s.impact === "medium" ? "text-teal-400 bg-teal-500/10 border-teal-500/30" :
+                          "text-gray-400 bg-gray-500/10 border-gray-500/30"
+                        }`}>
+                          {s.impact} impact
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 leading-relaxed">{s.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Weaknesses */}
+              <div className="glass-panel p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-orange-400" />
+                  Areas for Improvement
+                </h3>
+                <div className="space-y-4">
+                  {insights.weaknesses?.map((w: any, i: number) => (
+                    <div key={i} className="border-l-2 border-orange-500/50 pl-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="font-medium text-sm text-orange-300">{w.title}</h4>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${
+                          w.impact === "high" ? "text-red-400 bg-red-500/10 border-red-500/30" :
+                          w.impact === "medium" ? "text-orange-400 bg-orange-500/10 border-orange-500/30" :
+                          "text-gray-400 bg-gray-500/10 border-gray-500/30"
+                        }`}>
+                          {w.impact} impact
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 leading-relaxed">{w.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Recommendations */}
+            <div className="glass-panel p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-amber-400" />
+                Recommendations
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {insights.recommendations?.map((r: any, i: number) => (
+                  <div key={i} className="p-4 rounded-lg bg-white/[0.02] border border-white/5
+                                         hover:border-amber-500/20 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-sm text-amber-300">{r.title}</h4>
+                      <span className={`text-xs px-2 py-0.5 rounded-full border ${
+                        r.priority === "high" ? "text-red-400 bg-red-500/10 border-red-500/30" :
+                        r.priority === "medium" ? "text-amber-400 bg-amber-500/10 border-amber-500/30" :
+                        "text-gray-400 bg-gray-500/10 border-gray-500/30"
+                      }`}>
+                        {r.priority} priority
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 leading-relaxed mb-2">{r.description}</p>
+                    <p className="text-xs text-indigo-400">Expected: {r.expected_impact}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Per-Feature Analysis */}
+            <div className="glass-panel p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-indigo-400" />
+                Feature-Level Analysis
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {insights.feature_analysis?.map((f: any, i: number) => {
+                  const ratingColors: Record<string, string> = {
+                    excellent: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+                    good: "text-teal-400 bg-teal-500/10 border-teal-500/30",
+                    average: "text-amber-400 bg-amber-500/10 border-amber-500/30",
+                    poor: "text-red-400 bg-red-500/10 border-red-500/30",
+                  };
+                  const ratingStyle = ratingColors[f.rating] || ratingColors.average;
+
+                  return (
+                    <div key={i} className="p-4 rounded-lg bg-white/[0.02] border border-white/5">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-gray-500 font-mono">{f.feature_name}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${ratingStyle}`}>
+                          {f.rating}
+                        </span>
+                      </div>
+                      <p className="text-lg font-bold text-white mb-1">
+                        {typeof f.value === "number" ? f.value.toFixed(4) : f.value}
+                      </p>
+                      <p className="text-xs text-gray-400 leading-relaxed">{f.interpretation}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Metadata */}
+            <p className="text-xs text-gray-600 text-right">
+              Generated by {insights.model_used}
+              {insights.generated_at && ` • ${new Date(insights.generated_at).toLocaleString()}`}
+            </p>
+          </div>
+        )}
+      </motion.div>
+
+      {/* ── SECTION 4: Radar Chart (Dimension Breakdown) ───────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
         className="glass-panel p-6"
       >
         <div className="flex items-center justify-between mb-4">
@@ -393,11 +617,11 @@ export default function ReportPage() {
         </div>
       </motion.div>
 
-      {/* ── SECTION 4: Engagement Curve ─────────────────────────────────── */}
+      {/* ── SECTION 5: Engagement Curve ─────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
         className="glass-panel p-6"
       >
         <h3 className="text-lg font-semibold mb-6">Second-by-Second Engagement Curve</h3>
@@ -432,6 +656,7 @@ export default function ReportPage() {
           </div>
         </div>
       </motion.div>
+
     </div>
   );
 }
