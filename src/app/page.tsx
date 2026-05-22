@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { UploadCloud, FileVideo, Activity, Brain, ArrowRight } from "lucide-react";
+import { UploadCloud, FileVideo, Activity, Brain, ArrowRight, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import Link from "next/link";
@@ -151,23 +151,52 @@ export default function Dashboard() {
                     </span>
                   </div>
                   
-                  {vid.scores?.overall_score !== undefined && vid.scores?.overall_score !== null && vid.status === 'COMPLETED' && (
-                    <div className="pt-4 border-t border-white/10">
-                      <div className="flex justify-between items-end">
-                        <span className="text-sm text-gray-400">Neural Score</span>
-                        <span className="text-2xl font-bold text-white">
-                          {vid.scores.overall_score.toFixed(0)}
-                          <span className="text-sm text-gray-500">/100</span>
-                        </span>
+                  {vid.scores?.overall_score !== undefined && vid.scores?.overall_score !== null && vid.status === 'COMPLETED' && (() => {
+                    const tier = vid.scores.prediction_tier;
+                    const tierColors: Record<string, string> = {
+                      "Strong High": "text-emerald-400 bg-emerald-500/15 border-emerald-500/40",
+                      "Likely High": "text-teal-400 bg-teal-500/15 border-teal-500/40",
+                      "Borderline": "text-amber-400 bg-amber-500/15 border-amber-500/40",
+                      "Likely Low": "text-orange-400 bg-orange-500/15 border-orange-500/40",
+                      "Strong Low": "text-red-400 bg-red-500/15 border-red-500/40",
+                    };
+                    const tierStyle = tierColors[tier] || tierColors["Borderline"];
+
+                    return (
+                      <div className="pt-4 border-t border-white/10 space-y-3">
+                        {/* Tier Badge + Predicted CTR */}
+                        {tier && (
+                          <div className="flex items-center justify-between">
+                            <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${tierStyle}`}>
+                              {tier}
+                            </span>
+                            {vid.scores.predicted_ctr != null && (
+                              <span className="flex items-center gap-1.5 text-sm">
+                                <TrendingUp className="w-3.5 h-3.5 text-gray-500" />
+                                <span className="font-bold text-white">{vid.scores.predicted_ctr.toFixed(2)}%</span>
+                                <span className="text-gray-500">CTR</span>
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Neural Score Bar */}
+                        <div className="flex justify-between items-end">
+                          <span className="text-sm text-gray-400">Neural Score</span>
+                          <span className="text-2xl font-bold text-white">
+                            {vid.scores.overall_score.toFixed(0)}
+                            <span className="text-sm text-gray-500">/100</span>
+                          </span>
+                        </div>
+                        <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-indigo-500 to-pink-500 h-full rounded-full"
+                            style={{ width: `${Math.min(100, Math.max(0, vid.scores.overall_score))}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-white/10 h-2 rounded-full mt-2 overflow-hidden">
-                        <div 
-                          className="bg-gradient-to-r from-indigo-500 to-pink-500 h-full rounded-full"
-                          style={{ width: `${Math.min(100, Math.max(0, vid.scores.overall_score))}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
                 
                 <div className="flex justify-end pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
