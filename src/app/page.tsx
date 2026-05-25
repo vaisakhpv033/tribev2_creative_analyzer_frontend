@@ -1,13 +1,25 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { UploadCloud, FileVideo, Activity, Brain, ArrowRight, TrendingUp } from "lucide-react";
+import { UploadCloud, FileVideo, Activity, Brain, ArrowRight, TrendingUp, Cpu } from "lucide-react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import Link from "next/link";
 
 export default function Dashboard() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+  // Status display mapping for GPU lifecycle statuses
+  const STATUS_DISPLAY: Record<string, { label: string; description: string }> = {
+    PENDING: { label: "Queued", description: "Waiting in queue..." },
+    PROVISIONING_GPU: { label: "Provisioning GPU", description: "Allocating GPU server — this may take 1-3 min..." },
+    BOOTING_GPU: { label: "Starting GPU", description: "GPU server booting up..." },
+    INFERENCE: { label: "Analyzing", description: "Running neural inference..." },
+    ANALYZING: { label: "Processing", description: "Computing scores..." },
+    COMPLETED: { label: "Completed", description: "Analysis complete" },
+    FAILED: { label: "Failed", description: "Analysis failed" },
+  };
+
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [videos, setVideos] = useState([]);
@@ -142,14 +154,24 @@ export default function Dashboard() {
                 </div>
 
                 <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Status</span>
-                    <span className={`font-medium ${
-                      vid.status === 'COMPLETED' ? 'text-emerald-400' :
-                      vid.status === 'FAILED' ? 'text-red-400' : 'text-amber-400 animate-pulse'
-                    }`}>
-                      {vid.status}
-                    </span>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Status</span>
+                      <span className={`font-medium flex items-center gap-1.5 ${
+                        vid.status === 'COMPLETED' ? 'text-emerald-400' :
+                        vid.status === 'FAILED' ? 'text-red-400' : 'text-amber-400 animate-pulse'
+                      }`}>
+                        {(vid.status === 'PROVISIONING_GPU' || vid.status === 'BOOTING_GPU') && (
+                          <Cpu className="w-3.5 h-3.5" />
+                        )}
+                        {STATUS_DISPLAY[vid.status]?.label || vid.status}
+                      </span>
+                    </div>
+                    {vid.status !== 'COMPLETED' && vid.status !== 'FAILED' && STATUS_DISPLAY[vid.status]?.description && (
+                      <p className="text-xs text-gray-500 text-right">
+                        {STATUS_DISPLAY[vid.status].description}
+                      </p>
+                    )}
                   </div>
                   
                   {vid.scores?.overall_score !== undefined && vid.scores?.overall_score !== null && vid.status === 'COMPLETED' && (() => {
